@@ -13,16 +13,30 @@ type Pipe = {
 
 export default class Demo extends Phaser.Scene {
     bird: Phaser.Physics.Arcade.Sprite = null
-    pointLabel: Phaser.GameObjects.Text = null
+    pipsColiders: Phaser.Physics.Arcade.Group = null
+    
     xScroll: number = 0
     lastPipePoint: number = 0
     aktivePipes: Pipe[] = []
     gameOver: boolean = false
     group: any
-    pipsColiders: Phaser.Physics.Arcade.Group
+
+    birdYLabel: Phaser.GameObjects.Text = null
+    distanceToPipeLabel: Phaser.GameObjects.Text = null
+    pointLabel: Phaser.GameObjects.Text = null
 
     constructor() {
         super('demo')
+    }
+
+    // inputs for the ML model
+
+    get distanceToPipe() {
+        return Math.min(...this.aktivePipes.map(p => p.topPipe.x).filter(p => p > this.bird.x)) - this.bird.x
+    }
+    
+    get birdY() {
+        return this.bird.y
     }
 
     preload() {
@@ -36,6 +50,16 @@ export default class Demo extends Phaser.Scene {
             fill: '#00ff00',
         })
 
+        this.birdYLabel = this.add.text(30, 50, '', {
+            font: '16px Courier',
+            fill: '#00ff00',
+        })
+
+        this.distanceToPipeLabel = this.add.text(30, 70, '', {
+            font: '16px Courier',
+            fill: '#00ff00',
+        })
+
         this.bird = this.physics.add
             .sprite(100, 400, 'bird')
             .setScale(0.095)
@@ -43,7 +67,7 @@ export default class Demo extends Phaser.Scene {
 
         this.input.keyboard.on('keydown-' + 'SPACE', (event) => {
             if (!this.gameOver) {
-                this.bird.setVelocityY(-240)
+                this.bird.setVelocityY(-100) // -240
                 this.bird.setRotation(this.bird.body.velocity.y * 0.02 + 10)
             }
         })
@@ -51,7 +75,10 @@ export default class Demo extends Phaser.Scene {
 
     update() {
         if (!this.gameOver) {
+            // data labels
             this.pointLabel.setText('Points: ' + Math.abs(this.xScroll))
+            this.distanceToPipeLabel.setText('Dis to pip: ' + this.distanceToPipe)
+            this.birdYLabel.setText('Bird Y: ' + this.birdY)
 
             this.xScroll--
 
