@@ -1,3 +1,4 @@
+import { math } from '@tensorflow/tfjs'
 import 'phaser'
 
 const height = 600
@@ -9,12 +10,20 @@ type Pipe = {
     offset: number
     bottomPipe: Phaser.Physics.Arcade.Sprite
     topPipe: Phaser.Physics.Arcade.Sprite
+    randomX: number
+}
+
+type Coordinates = {
+    x: number
+    y: number
 }
 
 export default class Demo extends Phaser.Scene {
     bird: Phaser.Physics.Arcade.Sprite = null
     pipsColiders: Phaser.Physics.Arcade.Group = null
-    
+
+    graphics: Phaser.GameObjects.Graphics = null
+
     xScroll: number = 0
     lastPipePoint: number = 0
     aktivePipes: Pipe[] = []
@@ -25,23 +34,81 @@ export default class Demo extends Phaser.Scene {
     distanceToPipeLabel: Phaser.GameObjects.Text = null
     pointLabel: Phaser.GameObjects.Text = null
 
+    topPipeYLabel: Phaser.GameObjects.Text = null
+    bottomPipeYLabel: Phaser.GameObjects.Text = null
+
+    debugTopPoint: Phaser.Geom.Point = null;
+
     constructor() {
         super('demo')
     }
 
+    // cleanAktivePips() {
+    //     const toDestroy = this.aktivePipes.filter((p) => !p.topPipe.visible)
+    //     toDestroy.forEach((p) => {
+    //         p.bottomPipe.destroy()
+    //         p.topPipe.destroy()
+    //     })
+    //     console.log(this.aktivePipes.filter((p) => p.topPipe.visible).length)
+    // }
+
     // inputs for the ML model
+    get nerestPipe() {
+        return this.aktivePipes
+            .filter((p) => p.bottomPipe.x > this.bird.x)
+            .reduce(
+                (c, p) => {
+                    return c.bottomPipe.x < p.bottomPipe.x ? c : p
+                },
+                {
+                    offset: 0,
+                    bottomPipe: { x: 3000 },
+                    topPipe: { x: 3000 },
+                } as Pipe
+            )
+    }
 
     get distanceToPipe() {
-        return Math.min(...this.aktivePipes.map(p => p.topPipe.x).filter(p => p > this.bird.x)) - this.bird.x
+        return this.nerestPipe.bottomPipe.x - this.bird.x
     }
-    
+
+    // // get topPipePos(): Phaser.Physics.Arcade.Sprite {
+    // //     return this.nerestPipe.topPipe
+    // // }
+
+    // get bottomPipeY() {
+    //     return 0
+    //     // return this.aktivePipes
+    //     //     .map(
+    //     //         p => ({ y: p.bottomPipe.y, x: p.bottomPipe.y } as Coordinates)
+    //     //     )
+    //     //     .filter(p => p.x > this.bird.x)
+    //     //     .reduce(
+    //     //         (c, p) => {
+    //     //             return c.x < p.x ? c : p
+    //     //         },
+    //     //         { x: Infinity, y: 0 } as Coordinates
+    //     //     ).y
+    // }
+
     get birdY() {
         return this.bird.y
+    }
+
+    drawDebugPoints() {
+        const pips = this.nerestPipe
     }
 
     preload() {
         this.load.image('bird', 'assets/bird.png')
         this.load.image('pipe', 'assets/pipe.png')
+    }
+
+    drawDebugUi() {
+        this.graphics.clear();
+        this.debugTopPoint.x = this.nerestPipe.topPipe.x;
+        this.debugTopPoint.y = this.nerestPipe.randomX;
+        this.graphics.fillPointShape(this.debugTopPoint, 10);
     }
 
     create() {
@@ -60,29 +127,51 @@ export default class Demo extends Phaser.Scene {
             fill: '#00ff00',
         })
 
+        this.bottomPipeYLabel = this.add.text(30, 90, '', {
+            font: '16px Courier',
+            fill: '#00ff00',
+        })
+
+        this.topPipeYLabel = this.add.text(30, 120, '', {
+            font: '16px Courier',
+            fill: '#00ff00',
+        })
+
         this.bird = this.physics.add
-            .sprite(100, 400, 'bird')
+            .sprite(300, 400, 'bird')
             .setScale(0.095)
             .setGravity(0, 200)
 
         this.input.keyboard.on('keydown-' + 'SPACE', (event) => {
             if (!this.gameOver) {
-                this.bird.setVelocityY(-100) // -240
+                this.bird.setVelocityY(-170) // -240
                 this.bird.setRotation(this.bird.body.velocity.y * 0.02 + 10)
             }
         })
+
+        this.debugTopPoint = new Phaser.Geom.Point(300, 100);
+        this.graphics = this.add.graphics({ fillStyle: { color: 0xff0000 } });
     }
 
     update() {
         if (!this.gameOver) {
+            // this.cleanAktivePips()
+            this.drawDebugPoints()
+
             // data labels
             this.pointLabel.setText('Points: ' + Math.abs(this.xScroll))
-            this.distanceToPipeLabel.setText('Dis to pip: ' + this.distanceToPipe)
+            this.distanceToPipeLabel.setText(
+                'Dis to pip: ' + this.distanceToPipe
+            )
             this.birdYLabel.setText('Bird Y: ' + this.birdY)
+
+            const pipes = this.nerestPipe
+            this.topPipeYLabel.setText('top pipe Y: ' + (pipes.topPipe.displayHeight - Math.abs(pipes.topPipe.y)))
+            this.bottomPipeYLabel.setText('bottom pipe Y: ' + (pipes.bottomPipe.displayHeight - Math.abs(pipes.bottomPipe.y)))
 
             this.xScroll--
 
-            if(this.bird.rotation < 0){
+            if (this.bird.rotation < 0) {
                 this.bird.setRotation(this.bird.body.velocity.y * 0.02 + 10)
             }
 
@@ -98,6 +187,7 @@ export default class Demo extends Phaser.Scene {
 
             this.gameoverCheck()
         }
+        this.drawDebugUi()
     }
 
     gameoverCheck() {
@@ -107,7 +197,7 @@ export default class Demo extends Phaser.Scene {
     }
 
     setGameOver() {
-        this.add.text(width / 2, height / 2, 'Game Over', {
+        this.add.text(width / 2 - 30, height / 2, 'Game Over', {
             font: '16px Courier',
             fill: '#00ff00',
         })
@@ -134,6 +224,7 @@ export default class Demo extends Phaser.Scene {
             bottomPipe,
             topPipe,
             offset: Math.abs(this.xScroll) + width + 50,
+            randomX: xRandom
         } as Pipe)
     }
 }
@@ -144,10 +235,11 @@ const config = {
     width: width,
     height: height,
     scene: Demo,
+    fps: { min: 20 },
     physics: {
         default: 'arcade',
-        arcade: { debug: false },
+        arcade: { debug: true },
     },
-}
+} as Phaser.Types.Core.GameConfig
 
 const game = new Phaser.Game(config)
