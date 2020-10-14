@@ -1,4 +1,3 @@
-import { math } from '@tensorflow/tfjs'
 import 'phaser'
 
 const height = 600
