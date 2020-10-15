@@ -9,12 +9,7 @@ type Pipe = {
     offset: number
     bottomPipe: Phaser.Physics.Arcade.Sprite
     topPipe: Phaser.Physics.Arcade.Sprite
-    randomX: number
-}
-
-type Coordinates = {
-    x: number
-    y: number
+    randomY: number
 }
 
 export default class Demo extends Phaser.Scene {
@@ -33,23 +28,14 @@ export default class Demo extends Phaser.Scene {
     distanceToPipeLabel: Phaser.GameObjects.Text = null
     pointLabel: Phaser.GameObjects.Text = null
 
-    topPipeYLabel: Phaser.GameObjects.Text = null
-    bottomPipeYLabel: Phaser.GameObjects.Text = null
+    targetLabel: Phaser.GameObjects.Text = null
+    numOfActivePipesLabel: Phaser.GameObjects.Text = null
 
     debugTopPoint: Phaser.Geom.Point = null;
 
     constructor() {
         super('demo')
     }
-
-    // cleanAktivePips() {
-    //     const toDestroy = this.aktivePipes.filter((p) => !p.topPipe.visible)
-    //     toDestroy.forEach((p) => {
-    //         p.bottomPipe.destroy()
-    //         p.topPipe.destroy()
-    //     })
-    //     console.log(this.aktivePipes.filter((p) => p.topPipe.visible).length)
-    // }
 
     // inputs for the ML model
     get nerestPipe() {
@@ -71,31 +57,21 @@ export default class Demo extends Phaser.Scene {
         return this.nerestPipe.bottomPipe.x - this.bird.x
     }
 
-    // // get topPipePos(): Phaser.Physics.Arcade.Sprite {
-    // //     return this.nerestPipe.topPipe
-    // // }
-
-    // get bottomPipeY() {
-    //     return 0
-    //     // return this.aktivePipes
-    //     //     .map(
-    //     //         p => ({ y: p.bottomPipe.y, x: p.bottomPipe.y } as Coordinates)
-    //     //     )
-    //     //     .filter(p => p.x > this.bird.x)
-    //     //     .reduce(
-    //     //         (c, p) => {
-    //     //             return c.x < p.x ? c : p
-    //     //         },
-    //     //         { x: Infinity, y: 0 } as Coordinates
-    //     //     ).y
-    // }
+    get numberOfAktivePipes (){
+        return this.aktivePipes.length
+    }
 
     get birdY() {
         return this.bird.y
     }
 
-    drawDebugPoints() {
-        const pips = this.nerestPipe
+    cleanAktivePips() {
+        const toDestroy = this.aktivePipes.filter((p) => p.topPipe.x < -70)
+        this.aktivePipes = this.aktivePipes.filter((p) => p.topPipe.x > -70)
+        toDestroy.forEach((p) => {
+            p.bottomPipe.destroy()
+            p.topPipe.destroy()
+        })
     }
 
     preload() {
@@ -106,7 +82,7 @@ export default class Demo extends Phaser.Scene {
     drawDebugUi() {
         this.graphics.clear();
         this.debugTopPoint.x = this.nerestPipe.topPipe.x;
-        this.debugTopPoint.y = this.nerestPipe.randomX;
+        this.debugTopPoint.y = this.nerestPipe.randomY;
         this.graphics.fillPointShape(this.debugTopPoint, 10);
     }
 
@@ -126,12 +102,12 @@ export default class Demo extends Phaser.Scene {
             fill: '#00ff00',
         })
 
-        this.bottomPipeYLabel = this.add.text(30, 90, '', {
+        this.numOfActivePipesLabel = this.add.text(30, 90, '', {
             font: '16px Courier',
             fill: '#00ff00',
         })
 
-        this.topPipeYLabel = this.add.text(30, 120, '', {
+        this.targetLabel = this.add.text(30, 110, '', {
             font: '16px Courier',
             fill: '#00ff00',
         })
@@ -154,8 +130,7 @@ export default class Demo extends Phaser.Scene {
 
     update() {
         if (!this.gameOver) {
-            // this.cleanAktivePips()
-            this.drawDebugPoints()
+            this.cleanAktivePips()
 
             // data labels
             this.pointLabel.setText('Points: ' + Math.abs(this.xScroll))
@@ -165,8 +140,8 @@ export default class Demo extends Phaser.Scene {
             this.birdYLabel.setText('Bird Y: ' + this.birdY)
 
             const pipes = this.nerestPipe
-            this.topPipeYLabel.setText('top pipe Y: ' + (pipes.topPipe.displayHeight - Math.abs(pipes.topPipe.y)))
-            this.bottomPipeYLabel.setText('bottom pipe Y: ' + (pipes.bottomPipe.displayHeight - Math.abs(pipes.bottomPipe.y)))
+            this.targetLabel.setText('target x: ' + this.nerestPipe.topPipe.x + " target y: " + this.nerestPipe.randomY)
+            this.numOfActivePipesLabel.setText('Num of active pips: ' + this.numberOfAktivePipes)
 
             this.xScroll--
 
@@ -205,14 +180,14 @@ export default class Demo extends Phaser.Scene {
     }
 
     createPips() {
-        var xRandom = Phaser.Math.Between(150, height - 150)
+        var randomY = Phaser.Math.Between(150, height - 150)
 
         let bottomPipe = this.physics.add
-            .sprite(width + 50, xRandom + spaceBetweenPipsY, 'pipe')
+            .sprite(width + 50, randomY + spaceBetweenPipsY, 'pipe')
             .setScale(0.26)
 
         let topPipe = this.physics.add
-            .sprite(width + 50, xRandom - spaceBetweenPipsY, 'pipe')
+            .sprite(width + 50, randomY - spaceBetweenPipsY, 'pipe')
             .setScale(0.26)
             .setRotation(Math.PI)
 
@@ -223,7 +198,7 @@ export default class Demo extends Phaser.Scene {
             bottomPipe,
             topPipe,
             offset: Math.abs(this.xScroll) + width + 50,
-            randomX: xRandom
+            randomY
         } as Pipe)
     }
 }
