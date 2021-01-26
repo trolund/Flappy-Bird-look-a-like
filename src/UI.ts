@@ -12,7 +12,7 @@ type Pipe = {
     randomY: number
 }
 
-export default class Demo extends Phaser.Scene {
+export default class UI extends Phaser.Scene {
     bird: Phaser.Physics.Arcade.Sprite = null
     pipsColiders: Phaser.Physics.Arcade.Group = null
 
@@ -57,7 +57,7 @@ export default class Demo extends Phaser.Scene {
         return this.nerestPipe.bottomPipe.x - this.bird.x
     }
 
-    get numberOfAktivePipes (){
+    get numberOfAktivePipes() {
         return this.aktivePipes.length
     }
 
@@ -208,7 +208,7 @@ const config = {
     backgroundColor: '#125555',
     width: width,
     height: height,
-    scene: Demo,
+    scene: UI,
     fps: { min: 20 },
     physics: {
         default: 'arcade',
