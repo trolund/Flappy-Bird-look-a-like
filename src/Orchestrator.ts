@@ -4,10 +4,13 @@ import { Memory } from './memory';
 // import { maybeRenderDuringTraining, setUpUI } from './ui';
 
 import * as tf from '@tensorflow/tfjs';
+import { config } from './UI';
 
 const MIN_EPSILON = 0.01;
 const MAX_EPSILON = 0.2;
 const LAMBDA = 0.01;
+
+const game = new Phaser.Game(config)
 
 export class Orchestrator {
     /**
@@ -17,24 +20,35 @@ export class Orchestrator {
      * @param {number} discountRate
      * @param {number} maxStepsPerGame
      */
-    constructor(mountainCar, model, memory, discountRate, maxStepsPerGame) {
-        // The main components of the environment
-        // this.mountainCar = mountainCar;
-        // this.model = model;
-        // this.memory = memory;
 
-        // // The exploration parameter
-        // this.eps = MAX_EPSILON;
+    game: Phaser.Game = null;
+    model = null;
+    memory = null;
+    eps: number = 0;
+    steps: number = 0;
+    maxStepsPerGame: number = 0;
+    discountRate: number = 0;
+    rewardStore = [];
+    maxPositionStore = [];
+
+    constructor(game, model, memory, discountRate, maxStepsPerGame) {
+        // The main components of the environment
+        this.game = game;
+        this.model = model;
+        this.memory = memory;
+
+        // The exploration parameter
+        this.eps = MAX_EPSILON;
 
         // // Keep tracking of the elapsed steps
-        // this.steps = 0;
-        // this.maxStepsPerGame = maxStepsPerGame;
+        this.steps = 0;
+        this.maxStepsPerGame = maxStepsPerGame;
 
-        // this.discountRate = discountRate;
+        this.discountRate = discountRate;
 
         // // Initialization of the rewards and max positions containers
-        // this.rewardStore = new Array();
-        // this.maxPositionStore = new Array();
+        this.rewardStore = new Array();
+        this.maxPositionStore = new Array();
     }
 
     /**
@@ -57,43 +71,44 @@ export class Orchestrator {
 
     async run() {
         // this.mountainCar.setRandomState();
-        // let state = this.mountainCar.getStateTensor();
-        // let totalReward = 0;
-        // let maxPosition = -100;
-        // let step = 0;
-        // while (step < this.maxStepsPerGame) {
+        let state = this.game.getStateTensor();
+        this.game
+        let totalReward = 0;
+        let maxPosition = -100;
+        let step = 0;
+        while (step < this.maxStepsPerGame) {
 
-        //     // Rendering in the browser
-        //     await maybeRenderDuringTraining(this.mountainCar);
+            // Rendering in the browser
+            //     await maybeRenderDuringTraining(this.mountainCar);
 
-        //     // Interaction with the environment
-        //     const action = this.model.chooseAction(state, this.eps);
-        //     const done = this.mountainCar.update(action);
-        //     const reward = this.computeReward(this.mountainCar.position);
+            //     // Interaction with the environment
+            const action = this.model.chooseAction(state, this.eps);
+            //     const done = this.mountainCar.update(action);
+            //     const reward = this.computeReward(this.mountainCar.position);
 
-        //     let nextState = this.mountainCar.getStateTensor();
+            //     let nextState = this.mountainCar.getStateTensor();
 
-        //     // Keep the car on max position if reached
-        //     if (this.mountainCar.position > maxPosition) maxPosition = this.mountainCar.position;
-        //     if (done) nextState = null;
+            //     // Keep the car on max position if reached
+            //     if (this.mountainCar.position > maxPosition) maxPosition = this.mountainCar.position;
+            //     if (done) nextState = null;
 
-        //     this.memory.addSample([state, action, reward, nextState]);
+            //     this.memory.addSample([state, action, reward, nextState]);
 
-        //     this.steps += 1;
-        //     // Exponentially decay the exploration parameter
-        //     this.eps = MIN_EPSILON + (MAX_EPSILON - MIN_EPSILON) * Math.exp(-LAMBDA * this.steps);
+            //     this.steps += 1;
+            //     // Exponentially decay the exploration parameter
+            //     this.eps = MIN_EPSILON + (MAX_EPSILON - MIN_EPSILON) * Math.exp(-LAMBDA * this.steps);
 
-        //     state = nextState;
-        //     totalReward += reward;
-        //     step += 1;
+            //     state = nextState;
+            //     totalReward += reward;
+            //     step += 1;
 
-        //     // Keep track of the max position reached and store the total reward
-        //     if (done || step == this.maxStepsPerGame) {
-        //         this.rewardStore.push(totalReward);
-        //         this.maxPositionStore.push(maxPosition);
-        //         break;
-        //     }
-        // }
+            //     // Keep track of the max position reached and store the total reward
+            //     if (done || step == this.maxStepsPerGame) {
+            //         this.rewardStore.push(totalReward);
+            //         this.maxPositionStore.push(maxPosition);
+            //         break;
+            //     }
+        }
         // await this.replay()
     }
 

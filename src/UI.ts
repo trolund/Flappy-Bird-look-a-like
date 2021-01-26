@@ -216,4 +216,4 @@ const config = {
     },
 } as Phaser.Types.Core.GameConfig
 
-const game = new Phaser.Game(config)
+export { config }
